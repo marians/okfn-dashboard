@@ -65,7 +65,16 @@ function drawIfReady() {
         }
     }
     console.log('Data is complete. We can start drawing.');
+    // top chart
     drawOverallTimeline();
+    // subscribers history
+    drawTimeColumnChart(CONFIG.project.mailinglists,
+        DATA.mailinglists, 'subscribers',
+        'ml-subscribers-hist-chart', 150);
+    // posts history
+    drawTimeColumnChart(CONFIG.project.mailinglists,
+        DATA.mailinglists, 'posts',
+        'ml-posts-hist-chart', 150);
 }
 
 /**
@@ -157,6 +166,32 @@ function drawOverallTimeline() {
             bar: {groupWidth: '72%'}
         },
         containerId: 'overalltimelinechart'
+    });
+    wrapper.draw();
+}
+
+function drawTimeColumnChart(config, data, field, containerId, height) {
+    // create goole dataTable from API data
+    var timelineTable = getTimeTable(config, data, [field]);
+    // create ChartWrapper object
+    var width = $('#' + containerId).width();
+    var wrapper = new google.visualization.ChartWrapper({
+        chartType: 'ColumnChart',
+        dataTable: timelineTable,
+        options: {
+            'width': width,
+            'height': height,
+            isStacked: true,
+            legend: {position: 'none'},
+            vAxis: {textPosition: 'none'},
+            colors: CONFIG.colors,
+            chartArea: {left: 2, top: 2, width: (width - 4), height: (height - 20)},
+            focusTarget: 'category',
+            fontSize: 12,
+            fontName: 'Helvetica Neue, Arial, sans-serif',
+            bar: {groupWidth: '72%'}
+        },
+        containerId: containerId
     });
     wrapper.draw();
 }
