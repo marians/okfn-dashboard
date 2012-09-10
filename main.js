@@ -102,47 +102,53 @@ function drawIfReady() {
  * @param Object fields  Array with fields to be selected from data items
  */
 function getTimeTable(config, data, fields) {
+    //console.log('Data:', data);
     var table = new google.visualization.DataTable();
     table.addColumn('date', 'Date');
     // created required data columns (sorted by list name)
-    var listKeys = config;
-    //console.log(listKeys);
-    listKeys.sort();
-    for (var ml in listKeys) {
-        table.addColumn('number', listKeys[ml]);
+    var keys = config;
+    keys.sort();
+    for (var k in keys) {
+        table.addColumn('number', keys[k]);
     }
     // create dicts keyed by date
     var dateDict = {};
     var dateArray = [];
-    for (ml in data) {
-        for (var n in data[ml].data) {
-            var date = data[ml].data[n].timestamp;
+    for (var d in data) {
+        for (var n in data[d].data) {
+            var date = data[d].data[n].timestamp;
+            //console.log(d, n, date);
             if (typeof dateDict[date] === 'undefined') {
                 // add this date to the object and array
+                //console.log(fields, date);
                 dateArray.push(date);
                 dateDict[date] = {};
             }
-            dateDict[date][ml] = {};
+            dateDict[date][d] = {};
             for (var f in fields) {
-                dateDict[date][ml][fields[f]] = data[ml].data[n][fields[f]];
+                // fetch the indicated fields
+                //console.log(date, d, fields[f], data[d].data[n][fields[f]]);
+                dateDict[date][d][fields[f]] = data[d].data[n][fields[f]];
             }
-            
         }
     }
-    // create DataTable rows
+    // API gives us latest first. We want latest last.
     dateArray.reverse();
+    //console.log('dateArray:', dateArray);
+    //console.log('dateDict:', dateDict);
+    // create DataTable rows
     for (var dateIndex in dateArray) {
         var dateKey = dateArray[dateIndex];
         var theDate = isoStringToDate(dateKey);
         var row = [theDate]; // date in the first column
-        for (var ml2 in listKeys) {
-            var listName = listKeys[ml2];
-            //console.log(dateIndex, dateKey, dateDict[dateKey], dateDict[dateKey][listName]);
-            var val;
-            if (typeof dateDict[dateKey][listName] !== 'undefined') {
+        for (var k2 in keys) {
+            var itemName = keys[k2];
+            //console.log(dateIndex, dateKey, dateDict[dateKey], dateDict[dateKey][itemName]);
+            var val = null;
+            if (typeof dateDict[dateKey][itemName] !== 'undefined') {
                 for (var f2 in fields) {
-                    if (typeof dateDict[dateKey][listName][fields[f2]] !== 'undefined') {
-                        val = dateDict[dateKey][listName][fields[f2]];
+                    if (typeof dateDict[dateKey][itemName][fields[f2]] !== 'undefined') {
+                        val = dateDict[dateKey][itemName][fields[f2]];
                     }
                 }
             }
