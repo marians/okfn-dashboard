@@ -24,7 +24,7 @@ var DATA = {
 };
 
 $(document).ready(function(){
-    $('h1').text(CONFIG.project.title);
+    $('h1').text('Dashboard for ' + CONFIG.project.title);
 });
 
 function loadDataAndDrawCharts() {
@@ -68,32 +68,40 @@ function drawIfReady() {
     drawOverallTimeline();
 }
 
-function drawOverallTimeline() {
-    // create goole dataTable from API data
-    var timelineTable = new google.visualization.DataTable();
-    timelineTable.addColumn('date', 'Date');
+/**
+ * Create a Google DataTable with time-series-data
+ * as needed for Google Charts.
+ *
+ * @param Object config  Configuration object
+ * @param Object data    Data object
+ * @param Object fields  Array with fields to be selected from data items
+ */
+function getTimeTable(config, data, fields) {
+    var table = new google.visualization.DataTable();
+    table.addColumn('date', 'Date');
     // created required data columns (sorted by list name)
-    var listKeys = CONFIG.project.mailinglists;
-    console.log(listKeys);
+    var listKeys = config;
+    //console.log(listKeys);
     listKeys.sort();
     for (var ml in listKeys) {
-        timelineTable.addColumn('number', 'Posts in ' + listKeys[ml]);
+        table.addColumn('number', listKeys[ml]);
     }
     // create dicts keyed by date
     var dateDict = {};
     var dateArray = [];
-    for (ml in DATA.mailinglists) {
-        for (var n in DATA.mailinglists[ml].data) {
-            var date = DATA.mailinglists[ml].data[n].timestamp;
+    for (ml in data) {
+        for (var n in data[ml].data) {
+            var date = data[ml].data[n].timestamp;
             if (typeof dateDict[date] === 'undefined') {
                 // add this date to the object and array
                 dateArray.push(date);
                 dateDict[date] = {};
             }
-            dateDict[date][ml] = {
-                'posts': DATA.mailinglists[ml].data[n].posts,
-                'subscribers': DATA.mailinglists[ml].data[n].subscribers
-            };
+            dateDict[date][ml] = {};
+            for (var f in fields) {
+                dateDict[date][ml][fields[f]] = data[ml].data[n][fields[f]];
+            }
+            
         }
     }
     // create DataTable rows
@@ -106,15 +114,28 @@ function drawOverallTimeline() {
             var listName = listKeys[ml2];
             //console.log(dateIndex, dateKey, dateDict[dateKey], dateDict[dateKey][listName]);
             var val;
-            if (typeof dateDict[dateKey][listName] !== 'undefined' &&
-                typeof dateDict[dateKey][listName]['posts'] !== 'undefined') {
-                val = dateDict[dateKey][listName].posts;
+            if (typeof dateDict[dateKey][listName] !== 'undefined') {
+                for (var f2 in fields) {
+                    if (typeof dateDict[dateKey][listName][fields[f2]] !== 'undefined') {
+                        val = dateDict[dateKey][listName][fields[f2]];
+                    }
+                }
             }
             row.push(val);
         }
         // add this row to the dataTable
-        timelineTable.addRow(row);
+        table.addRow(row);
     }
+    return table;
+}
+
+function drawOverallTimeline() {
+    // create goole dataTable from API data
+    var timelineTable = getTimeTable(
+        CONFIG.project.mailinglists,
+        DATA.mailinglists,
+        ['posts']);
+    
     // create ChartWrapper object
     var width = $('#overalltimelinechart').width();
     var height = 150;
