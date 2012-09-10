@@ -31,8 +31,10 @@ function loadDataAndDrawCharts() {
     $(document).ready(function(){
         getGithubActivity(CONFIG.project.repo, function(d){
             // TODO: move away
-            var table = getGithubActivityByPersonTable(d);
-            drawBarChart(table, 'repo-contributors-chart', 150);
+            var tableByPerson = getGithubActivityByPersonTable(d);
+            drawBarChart(tableByPerson, 'repo-contributors-chart', 150);
+            var tableByRepo = getGithubActivityByRepoTable(d);
+            drawBarChart(tableByRepo, 'repo-action-chart', 150);
         });
         $.each(CONFIG.project.mailinglists, function(index, mailinglist){
             getMailinglistHistory(mailinglist, function(d){
@@ -242,7 +244,7 @@ function drawBarChart(dataTable, containerId, height) {
             legend: {position: 'none'},
             colors: CONFIG.colors,
             chartArea: {left: 50, top: 2, width: (width - 55), height: (height - 20)},
-            focusTarget: 'category',
+            //focusTarget: 'category',
             fontSize: 12,
             fontName: 'Helvetica Neue, Arial, sans-serif',
             bar: {groupWidth: '72%'}
@@ -278,6 +280,36 @@ function getGithubActivityByPersonTable(activityResponse) {
     sortArray.sort(sortArrayBySecondIndexReversed);
     $.each(sortArray, function(position, row){
         //console.log(position, row);
+        table.addRow(row);
+    });
+    return table;
+}
+
+/**
+ * aggregates github activity counts by repository
+ * from the raw data returned by the API. Output
+ * is a google DataTable.
+ */
+function getGithubActivityByRepoTable(activityResponse) {
+    var table = new google.visualization.DataTable();
+    table.addColumn('string', 'Repository');
+    table.addColumn('number', 'Events');
+    var dataByRepo = {};
+    $.each(activityResponse.data, function(index, item) {
+        //console.log(index, item.person.login, item._activity_type, item.type, item.repo.full_name);
+        var key = item.repo.full_name; // TODO: change to short name when available
+        if (typeof dataByRepo[key] === 'undefined') {
+            dataByRepo[key] = 0;
+        }
+        dataByRepo[key] += 1;
+    });
+    var count = 0;
+    var sortArray = [];
+    for (var n in dataByRepo) {
+        sortArray.push([n, dataByRepo[n]]);
+    }
+    sortArray.sort(sortArrayBySecondIndexReversed);
+    $.each(sortArray, function(position, row){
         table.addRow(row);
     });
     return table;
