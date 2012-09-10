@@ -68,13 +68,29 @@ function drawIfReady() {
     // top chart
     drawOverallTimeline();
     // subscribers history
-    drawTimeColumnChart(CONFIG.project.mailinglists,
+    drawTimeChart(CONFIG.project.mailinglists,
         DATA.mailinglists, 'subscribers',
-        'ml-subscribers-hist-chart', 150);
+        'ml-subscribers-hist-chart', 150, 'LineChart');
     // posts history
-    drawTimeColumnChart(CONFIG.project.mailinglists,
+    drawTimeChart(CONFIG.project.mailinglists,
         DATA.mailinglists, 'posts',
-        'ml-posts-hist-chart', 150);
+        'ml-posts-hist-chart', 150, 'ColumnChart');
+    // github watchers history
+    drawTimeChart(CONFIG.project.repo,
+        DATA.repo, 'watchers',
+        'repo-watchers-hist-chart', 150, 'LineChart');
+    // github forks history
+    drawTimeChart(CONFIG.project.repo,
+        DATA.repo, 'forks',
+        'repo-forks-hist-chart', 150, 'LineChart');
+    // github issues history
+    drawTimeChart(CONFIG.project.repo,
+        DATA.repo, 'open_issues',
+        'repo-issues-hist-chart', 150, 'LineChart');
+    // github size history
+    drawTimeChart(CONFIG.project.repo,
+        DATA.repo, 'size',
+        'repo-size-hist-chart', 150, 'LineChart');
 }
 
 /**
@@ -170,13 +186,13 @@ function drawOverallTimeline() {
     wrapper.draw();
 }
 
-function drawTimeColumnChart(config, data, field, containerId, height) {
+function drawTimeChart(config, data, field, containerId, height, chartType) {
     // create goole dataTable from API data
     var timelineTable = getTimeTable(config, data, [field]);
     // create ChartWrapper object
     var width = $('#' + containerId).width();
     var wrapper = new google.visualization.ChartWrapper({
-        chartType: 'ColumnChart',
+        chartType: chartType,
         dataTable: timelineTable,
         options: {
             'width': width,
