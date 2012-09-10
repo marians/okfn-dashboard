@@ -29,16 +29,21 @@ $(document).ready(function(){
 
 function loadDataAndDrawCharts() {
     $(document).ready(function(){
+        getGithubActivity(CONFIG.project.repo, function(d){
+            // TODO: move away
+            var table = getGithubActivityByPersonTable(d);
+            drawBarChart(table, 'repo-contributors-chart', 150);
+        });
         $.each(CONFIG.project.mailinglists, function(index, mailinglist){
             getMailinglistHistory(mailinglist, function(d){
-                console.log('mailinglist history:', mailinglist, d);
+                //console.log('mailinglist history:', mailinglist, d);
                 DATA.mailinglists[mailinglist] = d;
                 drawIfReady();
             });
         });
         $.each(CONFIG.project.repo, function(index, repo){
             getGithubRepoHistory(repo, function(d){
-                console.log('repo history:', repo, d);
+                //console.log('repo history:', repo, d);
                 DATA.repo[repo] = d;
                 drawIfReady();
             });
@@ -91,6 +96,9 @@ function drawIfReady() {
     drawTimeChart(CONFIG.project.repo,
         DATA.repo, 'size',
         'repo-size-hist-chart', 150, 'LineChart');
+
+    // github top contributors
+
 }
 
 /**
@@ -218,6 +226,67 @@ function drawTimeChart(config, data, field, containerId, height, chartType) {
     wrapper.draw();
 }
 
+/**
+ * Draws a horizontal bar chart for simple key-value pairs
+ */
+function drawBarChart(dataTable, containerId, height) {
+    // create ChartWrapper object
+    var width = $('#' + containerId).width();
+    var wrapper = new google.visualization.ChartWrapper({
+        chartType: 'BarChart',
+        dataTable: dataTable,
+        options: {
+            'width': width,
+            'height': height,
+            isStacked: true,
+            legend: {position: 'none'},
+            colors: CONFIG.colors,
+            chartArea: {left: 50, top: 2, width: (width - 55), height: (height - 20)},
+            focusTarget: 'category',
+            fontSize: 12,
+            fontName: 'Helvetica Neue, Arial, sans-serif',
+            bar: {groupWidth: '72%'}
+        },
+        containerId: containerId
+    });
+    wrapper.draw();
+}
+
+/**
+ * aggregates github activity counts by users
+ * (recenty most active users) from the raw data
+ * returned by the API. OUtput is a google DataTable.
+ */
+function getGithubActivityByPersonTable(activityResponse) {
+    var table = new google.visualization.DataTable();
+    table.addColumn('string', 'Contributor');
+    table.addColumn('number', 'Events');
+    var dataByPerson = {};
+    $.each(activityResponse.data, function(index, item) {
+        //console.log(index, item.person.login, item._activity_type, item.type, item.repo.full_name);
+        var person = item.person.login;
+        if (typeof dataByPerson[person] === 'undefined') {
+            dataByPerson[person] = 0;
+        }
+        dataByPerson[person] += 1;
+    });
+    var count = 0;
+    var sortArray = [];
+    for (var n in dataByPerson) {
+        sortArray.push([n, dataByPerson[n]]);
+    }
+    sortArray.sort(sortArrayBySecondIndexReversed);
+    $.each(sortArray, function(position, row){
+        //console.log(position, row);
+        table.addRow(row);
+    });
+    return table;
+}
+
+function sortArrayBySecondIndexReversed(a, b) {
+    return b[1] - a[1];
+}
+
 function isoStringToDate(str) {
     var parts = str.split('-');
     return new Date(
@@ -226,6 +295,9 @@ function isoStringToDate(str) {
         parseInt(parts[2], 10));
 }
 
+/**
+ * @param   String    name    Name of the mailing list to get history for
+ */
 function getMailinglistHistory(name, callback) {
     $.ajax({
         url: 'http://activityapi.herokuapp.com/api/1/history/mailman/'+ name + '?per_page=500&grain=week&callback=?',
@@ -234,9 +306,29 @@ function getMailinglistHistory(name, callback) {
     });
 }
 
+/**
+ * @param   String    name    Name of the github repo to get history for
+ */
 function getGithubRepoHistory(name, callback) {
     $.ajax({
         url: 'http://activityapi.herokuapp.com/api/1/history/github/'+ name + '?per_page=500&grain=week&callback=?',
+        dataType: 'jsonp',
+        success: callback
+    });
+}
+
+/**
+ * @param   String/Array    names    Name(s) of the github repo(s) to get ativity for
+ */
+function getGithubActivity(names, callback) {
+    var name = '';
+    if (typeof names === 'string') {
+        name = names;
+    } else {
+        name = names.join(',');
+    }
+    $.ajax({
+        url: 'http://activityapi.herokuapp.com/api/1/activity/github?repo='+ name + '&per_page=100&callback=?',
         dataType: 'jsonp',
         success: callback
     });
