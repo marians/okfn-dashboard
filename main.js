@@ -7,9 +7,9 @@ var CONFIG = {
     project: {
         title: 'CKAN Data Catalogue',
         mailinglists: ['ckan-discuss', 'ckan-dev'],
-        repo: ['ckan', 'ckanbuild', 'ckanclient', 'ckan-drupal',
-            'ckan-google-docs', 'ckan-jenkins', 'ckanjs',
-            'ckan-service-prototype'],
+        repo: ['okfn/ckan', 'okfn/ckanbuild', 'okfn/ckanclient', 'okfn/ckan-drupal',
+            'okfn/ckan-google-docs', 'okfn/ckan-jenkins', 'okfn/ckanjs',
+            'okfn/ckan-service-prototype'],
         people: ['ross', 'darwin','toby', 'markw', 'seanh',
             'shevski', 'davidraznick', 'amercader', 'johnglover',
             'aron', 'dread', 'thejimmyg']
@@ -29,6 +29,11 @@ $(document).ready(function(){
 
 function loadDataAndDrawCharts() {
     $(document).ready(function(){
+
+        getGithubRepoInfo('okfn/ckan', function(d){
+            console.log('github info:', d);
+        });
+
         getGithubActivity(CONFIG.project.repo, function(d){
             // TODO: move away
             var tableByPerson = getGithubActivityByPersonTable(d);
@@ -361,6 +366,14 @@ function getGithubActivity(names, callback) {
     }
     $.ajax({
         url: 'http://activityapi.herokuapp.com/api/1/activity/github?repo='+ name + '&per_page=100&callback=?',
+        dataType: 'jsonp',
+        success: callback
+    });
+}
+
+function getGithubRepoInfo(name, callback) {
+    $.ajax({
+        url: 'https://api.github.com/repos/' + name + '?callback=?',
         dataType: 'jsonp',
         success: callback
     });
