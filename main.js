@@ -3,6 +3,160 @@
 google.load('visualization', '1', {'packages':['corechart']});
 google.setOnLoadCallback(loadDataAndDrawCharts);
 
+var projects = [{
+        "name":"ckan",
+        "title":"CKAN",
+        "description":"CKAN is an open-source data hub. CKAN makes it easy to publish, share and find data. It provides a powerful and extensible system for cataloging and storing datasets, with an intuitive web front-end and API.",
+        "link":[
+            "http://ckan.org",
+            "http://wiki.okfn.org/Projects/CKAN"
+        ],
+        "people":["ross","toby","darwin","markw","seanh","shevski","davidraznick","amercader","johnglover","aron","dread","thejimmyg"],
+        "mailman":["ckan-dev","ckan-discuss","ckan-changes","ckan-news"],
+        "github":["okfn/ckan","okfn/ckanclient","okfn/dataprotocols","okfn/buildkit","okfn/webstore","okfn/dpm"],
+        "mailman_url":"http://activityapi.herokuapp.com/api/1/history/mailman"
+    },
+    {
+        "name":"datahub",
+        "title":"The Data Hub",
+        "people":[],
+        "mailman":["datahub-announce","datahub-news"],
+        "github":["okfn/datahub"]
+    },
+    {
+        "name":"ckanext",
+        "title":"CKAN Extensions",
+        "people":["ross","toby","darwin","markw","seanh","shevski","davidraznick","amercader","johnglover","aron","dread","thejimmyg"],
+        "mailman":[],
+        "github":["okfn/ckanext-webstorer","okfn/ckanext-iati","okfn/ckanext-archiver","okfn/ckanext-wordpresser","okfn/ckanext-example","okfn/ckanext-qa","okfn/ckanext-datacatalogs","okfn/ckanext-apps"]
+    },
+    {
+        "name":"datacatalogs",
+        "title":"Data Catalogs",
+        "link":["datacatalogs.org"],
+        "people":[],
+        "mailman":["data-catalogs"],
+        "github":["okfn/ckanext-datacatalogs"]
+    },
+    {
+        "name":"openspending",
+        "title":"OpenSpending",
+        "link":["http://openspending.org","http://blog.openspending.org/","http://twitter.com/openspending","http://wiki.openspending.org/Main_Page"],
+        "people":["pudo","lucychambers","grgr","vitorbaptista"],
+        "mailman":["openspending","openspending-dev"],
+        "github":["okfn/dpkg-israel-state-budget","okfn/openspending.plugins.datatables","okfn/openspending.plugins.treemap","openspending/openspending","openspending/openspendingjs","openspending/dotorg","openspending/openspending-etl"]
+    },
+    {
+        "name":"schoolofdata",
+        "title":"School Of Data",
+        "link":["http://schoolofdata.org","http://handbook.schoolofdata.org","http://opendatahandbook.org","http://wiki.okfn.org/Projects/Open_Data_Handbook"],
+        "people":["mihi","jenlowe"],
+        "mailman":["School-of-data","Scoda-dev","open-data-handbook"],
+        "github":["okfn/datawrangling","okfn/schoolofdata","okfn/opendatahandbook"]
+    },
+    {
+        "name":"opendatacommons",
+        "title":"Open Data Commons",
+        "description":"Open Data Commons provides legal solutions for open data, including the Public Domain Dedication and License (PDDL) and the Open Database License (ODbL).",
+        "link":["http://www.opendatacommons.org/","http://wiki.okfn.org/Open_Data_Commons"],
+        "people":[],
+        "mailman":["odc-coord","odc-discuss"],
+        "github":[]
+    },
+    {
+        "name":"lod2",
+        "title":"LOD (Linked Open Data)",
+        "description":"LOD2 is an EU-funded project involving a consortium of groups across Europe working to develop linked open data availability and to enable the creation of knowledge from interlinked data.",
+        "link":["http://lod2.eu/"],
+        "people":[],
+        "mailman":["lod2"],
+        "github":[]
+    },
+    {
+        "name":"wdmmg",
+        "title":"Where Does My Money Go?",
+        "description":"Find out where UK public finance goes with this open-source, embeddable web application. Explore the data using maps, timelines, and best of breed visualisation technologies.",
+        "link":["http://wheredoesmymoneygo.org/blog/"],
+        "people":[],
+        "mailman":["wdmmg-announce"],
+        "github":["openspending/cameroon.openspending.org","openspending/wheredoesmymoneygo.org"]
+    },
+    {
+        "name":"publicdomain",
+        "title":"Public Domain Works",
+        "description":"The Public Domain Works DB is an open registry of artistic works that are in the public domain. It is currently focused on books and sound recordings.",
+        "link":["http://publicdomainworks.net","http://wiki.okfn.org/Public_Domain_Calculators","http://publicdomainreview.org"],
+        "people":[],
+        "mailman":["pd-discuss","publicdomainreview"],
+        "github":["okfn/pdcalc","okfn/pdw2"]
+    },
+    {
+        "name":"opendefinition",
+        "title":"The Open Definition",
+        "description":"The Open (Knowledge) Definition (OD) sets out principles to define the 'open' in open knowledge. The term knowledge is used broadly and it includes all forms of data, content such as music, films or books as well any other types of information.",
+        "link":["http://www.opendefinition.org/"],
+        "people":[],
+        "mailman":["od-coord","od-discuss"],
+        "github":["okfn/licenses","okfn/opendefinition"]
+    },
+    {
+        "name":"recline",
+        "title":"Recline",
+        "link":["http://reclinejs.org"],
+        "people":["rgrp"],
+        "mailman":[],
+        "github":["okfn/recline","okfn/timeliner"]
+    },
+    {
+        "name":"annotator",
+        "title":"Annotator",
+        "description":"Annotate any web page simply by incorporating two lines of javascript into your site or running our bookmarklet.",
+        "link":["http://annotateit.org"],
+        "people":[],
+        "mailman":["annotator-dev"],
+        "github":["okfn/annotator","okfn/annotateit","okfn/annotator-store","okfn/annotator-wordpress","okfn/texts.annotateit.org"]
+    },
+    {
+        "name":"dashboard",
+        "title":"Dashboard",
+        "link":["http://okfnlabs.org/dashboard","http://activityapi.herokuapp.com"],
+        "people":["zephod"],
+        "mailman":[],
+        "github":["okfn/activityapi","okfn/dashboard"]
+    },
+    {
+        "name":"yourtopia",
+        "title":"YourTopia",
+        "link":["http://yourtopia.net","http://italia.yourtopia.net/"],
+        "people":["zephod"],
+        "mailman":["yourtopia"],
+        "github":["okfn/yourtopia"]
+    },
+    {
+        "name":"labs-projects",
+        "title":"Experimental Projects",
+        "people":["zephod","rgrp","vndimitrova"],
+        "mailman":["okfn-labs","open-history"],
+        "github":["okfn/bubbletree","okfn/hypernotes","okfn/okfn.github.com","sprints.okfnlabs.org","okfn/facetview"]
+    },
+    {
+        "name":"openbiblio",
+        "title":"Working Group: OpenBiblio",
+        "description":"Open Bibliography is a JISC funded project to advocate open access to bibliographic data and to demonstrate ways that such open datasets could be utilised.",
+        "link":["openbiblio.net"],
+        "people":["markmacgillivray","petermr","tomoinn"],
+        "mailman":["open-bibliography","bibliographica-users","bibliographica-folktales"],
+        "github":[]
+    },
+    {
+        "name":"bibserver",
+        "title":"BibServer & BibJSON",
+        "link":["bibsoup.net"],
+        "people":["markmacgillivray","petermr","tomoinn"],
+        "mailman":["Bibjson-dev","openbiblio-dev"],
+        "github":["okfn/bibserver"]
+    }];
+
 var CONFIG = {
     project: {
         title: 'CKAN Data Catalogue',
@@ -28,11 +182,85 @@ var DATA = {
     }
 };
 
+
+// Setting up History.js
+(function(window,undefined){
+    var History = window.History;
+    if ( !History.enabled ) {
+         // History.js is disabled for this browser.
+         // This is because we can optionally choose to support HTML4 browsers or not.
+        return false;
+    }
+    // Bind to StateChange Event
+    History.Adapter.bind(window,'statechange',function(){ // Note: We are using statechange instead of popstate
+        var State = History.getState(); // Note: We are using History.getState() instead of event.state
+        History.log(State.data, State.title, State.url);
+        loadProject(State.data.project);
+    });
+
+    // Change our States
+    //History.pushState({state:1}, "State 1", "?state=1"); // logs {state:1}, "State 1", "?state=1"
+    //History.pushState({state:2}, "State 2", "?state=2"); // logs {state:2}, "State 2", "?state=2"
+    //History.replaceState({state:3}, "State 3", "?state=3"); // logs {state:3}, "State 3", "?state=3"
+    //History.pushState(null, null, "?state=4"); // logs {}, '', "?state=4"
+    //History.back(); // logs {state:3}, "State 3", "?state=3"
+    //History.back(); // logs {state:1}, "State 1", "?state=1"
+    //History.back(); // logs {}, "Home Page", "?"
+    //History.go(2); // logs {state:3}, "State 3", "?state=3"
+
+})(window);
+
+
+
 $(document).ready(function(){
-    $('h1').text('Dashboard for ' + CONFIG.project.title);
+    // Doing stuff we can do without Google Chart Tools here
+    $.each(projects, function(index, project){
+        $('#projectselect').append('<option value="'+ project.name +'">'+ project.title +'</option>');
+    });
+    $('#projectselect').change(function(e){
+        e.preventDefault();
+        var p = $('#projectselect').val();
+        History.pushState({project: p}, "Project: " + p, "?project=" + p);
+    });
+
 });
 
+function loadProject(projectName) {
+
+    $('h1').text('Loading...');
+
+    // set the Project selector (if not done)
+    if ($('#projectselect').val() != projectName) {
+        $('#projectselect option').removeAttr('selected');
+        $('#projectselect option[value="'+projectName+'"]').attr('selected', 'selected');
+    }
+    var project;
+    for (var n in projects) {
+        if (projects[n].name == projectName) {
+            project = projects[n];
+        }
+    }
+    CONFIG.project.mailinglists = project.mailman;
+    CONFIG.project.repo = project.github;
+    CONFIG.project.title = project.title;
+
+    // reset DATA
+    DATA = {
+        history: {
+            mailinglists: {},
+            repo: {},
+            people: {}
+        },
+        activity: {
+            repo: {}
+        }
+    };
+
+    loadDataAndDrawCharts();
+}
+
 function loadDataAndDrawCharts() {
+    // Stuff we need Google Chart Tools for
     $(document).ready(function(){
 
         // top chart - overall activity over time
@@ -88,6 +316,7 @@ function drawIfReady() {
             return;
         }
     }
+    $('h1').text('Dashboard for ' + CONFIG.project.title);
     //console.log('Data is complete. We can start drawing.');
     // subscribers history
     drawTimeChart(CONFIG.project.mailinglists,
