@@ -137,7 +137,7 @@ var projects = [{
         "title":"Experimental Projects",
         "people":["zephod","rgrp","vndimitrova"],
         "mailman":["okfn-labs","open-history"],
-        "github":["okfn/bubbletree","okfn/hypernotes","okfn/okfn.github.com","sprints.okfnlabs.org","okfn/facetview"]
+        "github":["okfn/bubbletree","okfn/hypernotes","okfn/okfn.github.com","okfn/sprints.okfnlabs.org","okfn/facetview"]
     },
     {
         "name":"openbiblio",
@@ -198,16 +198,6 @@ var DATA = {
         loadProject(State.data.project);
     });
 
-    // Change our States
-    //History.pushState({state:1}, "State 1", "?state=1"); // logs {state:1}, "State 1", "?state=1"
-    //History.pushState({state:2}, "State 2", "?state=2"); // logs {state:2}, "State 2", "?state=2"
-    //History.replaceState({state:3}, "State 3", "?state=3"); // logs {state:3}, "State 3", "?state=3"
-    //History.pushState(null, null, "?state=4"); // logs {}, '', "?state=4"
-    //History.back(); // logs {state:3}, "State 3", "?state=3"
-    //History.back(); // logs {state:1}, "State 1", "?state=1"
-    //History.back(); // logs {}, "Home Page", "?"
-    //History.go(2); // logs {state:3}, "State 3", "?state=3"
-
 })(window);
 
 
@@ -222,6 +212,12 @@ $(document).ready(function(){
         var p = $('#projectselect').val();
         History.pushState({project: p}, "Project: " + p, "?project=" + p);
     });
+
+    // use the project ID given in the URL (if available)
+    var startState = History.getState();
+    if (typeof startState.data.project !== 'undefined') {
+        loadProject(startState.data.project);
+    }
 
 });
 
@@ -372,9 +368,10 @@ function getTimeTable(config, data, fields) {
     // create dicts keyed by date
     var dateDict = {};
     var dateArray = [];
+    console.log(data);
     for (var d in data) {
-        for (var n in data[d].data) {
-            var date = data[d].data[n].timestamp;
+        for (var n in data[d].data[d].data) {
+            var date = data[d].data[d].data[n].timestamp.split('T')[0];
             //console.log(d, n, date);
             if (typeof dateDict[date] === 'undefined') {
                 // add this date to the object and array
@@ -386,7 +383,7 @@ function getTimeTable(config, data, fields) {
             for (var f in fields) {
                 // fetch the indicated fields
                 //console.log(date, d, fields[f], data[d].data[n][fields[f]]);
-                dateDict[date][d][fields[f]] = data[d].data[n][fields[f]];
+                dateDict[date][d][fields[f]] = data[d].data[d].data[n][fields[f]];
             }
         }
     }
@@ -504,15 +501,16 @@ function drawOverallTimeline2(data) {
     $.each(data.repo.data, function(n, item) {
         //console.log(n, item.timestamp.split('T')[0], item);
         var timestamp = item.timestamp.split('T')[0];
-        if (typeof datekeyed[timestamp] !== 'undefined'){
-            datekeyed[timestamp].github += 1;
+        if (typeof datekeyed[timestamp] === 'undefined'){
+            datestamps.push(timestamp);
+            datekeyed[timestamp] = {'posts': 0, 'github': 0};
         }
+        datekeyed[timestamp].github += 1;
     });
     //console.log(datekeyed);
     datestamps.sort();
     for (var tsi in datestamps) {
         var ts = datestamps[tsi];
-        //console.log(ts);
         var row = [
             isoStringToDate(ts),
             datekeyed[ts].posts,
@@ -711,20 +709,24 @@ function getDataForOverallTimeline(mailinglists, repos, callback) {
     getGithubActivity(repos, function(data){
         complete_data['repo'] = data;
         complete_data['mailinglists'] = {};
-        $.each(mailinglists, function(index, list){
-            getMailinglistHistory(list, function(data){
-                complete_data['mailinglists'][list] = data;
-                // check if all mailinglists are loaded
-                //console.log('Checking completeness after loading:', list, data);
-                for (var l in mailinglists) {
-                    var myl = mailinglists[l];
-                    if (typeof complete_data['mailinglists'][myl] === 'undefined') {
-                        return;
+        if (mailinglists.length > 0) {
+            $.each(mailinglists, function(index, list){
+                getMailinglistHistory(list, function(data){
+                    complete_data['mailinglists'][list] = data;
+                    // check if all mailinglists are loaded
+                    //console.log('Checking completeness after loading:', list, data);
+                    for (var l in mailinglists) {
+                        var myl = mailinglists[l];
+                        if (typeof complete_data['mailinglists'][myl] === 'undefined') {
+                            return;
+                        }
                     }
-                }
-                callback(complete_data);
+                    callback(complete_data);
+                });
             });
-        });
+        } else {
+            callback(complete_data);
+        }
     });
 }
 
@@ -733,7 +735,7 @@ function getDataForOverallTimeline(mailinglists, repos, callback) {
  */
 function getMailinglistHistory(name, callback) {
     $.ajax({
-        url: 'http://activityapi.herokuapp.com/api/1/history/mailman/'+ name + '?per_page=500&grain=day&callback=?',
+        url: 'http://activityapi.herokuapp.com/api/1/history/mailman?list='+ name + '&per_page=500&grain=day&callback=?',
         dataType: 'jsonp',
         success: callback
     });
