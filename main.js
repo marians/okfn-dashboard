@@ -173,12 +173,12 @@ var CONFIG = {
 
 var DATA = {
     history: {
-        mailinglists: {},
-        repo: {},
+        mailinglists: {ok:false},
+        github: {ok:false},
         people: {}
     },
     activity: {
-        repo: {}
+        github: {ok:false}
     }
 };
 
@@ -243,12 +243,12 @@ function loadProject(projectName) {
     // reset DATA
     DATA = {
         history: {
-            mailinglists: {},
-            repo: {},
+            mailinglists: {ok:false},
+            github: {ok:false},
             people: {}
         },
         activity: {
-            repo: {}
+          github: {ok:false}
         }
     };
 
@@ -273,24 +273,20 @@ function loadDataAndDrawCharts() {
         // functions from here on rely on data being
         // available in DATA. This is why it takes so long
         // until the graphs actually appear.
-        $.each(CONFIG.project.mailinglists, function(index, mailinglist){
-            getMailinglistHistory(mailinglist, function(d){
-                //console.log('mailinglist history:', mailinglist, d);
-                DATA.history.mailinglists[mailinglist] = d;
-                drawIfReady();
-            });
-        });
-        $.each(CONFIG.project.repo, function(index, repo){
-            getGithubRepoHistory(repo, function(d){
-                //console.log('repo history:', repo, d);
-                DATA.history.repo[repo] = d;
-                drawIfReady();
-            });
-            getGithubActivity(repo, function(d){
-                DATA.activity.repo[repo] = d;
-                drawIfReady();
-            });
-        });
+          getMailinglistHistory(CONFIG.project.mailinglists, function(d){
+              //console.log('mailinglist history:', mailinglist, d);
+              DATA.history.mailinglists = d;
+              drawIfReady();
+          });
+          getGithubRepoHistory(CONFIG.project.repo, function(d){
+              //console.log('repo history:', repo, d);
+              DATA.history.github = d;
+              drawIfReady();
+          });
+          getGithubActivity(CONFIG.project.repo, function(d){
+              DATA.activity.github = d;
+              drawIfReady();
+          });
     });
 }
 
@@ -299,51 +295,46 @@ function loadDataAndDrawCharts() {
  * check if all loading is done and if yes draw the graphs.
  */
 function drawIfReady() {
-    for (var m in CONFIG.project.mailinglists) {
-        if (typeof DATA.history.mailinglists[CONFIG.project.mailinglists[m]] === 'undefined') {
-            return;
-        }
+    if (!DATA.history.mailinglists.ok) {
+      return;
     }
-    for (var r in CONFIG.project.repo) {
-        if (typeof DATA.history.repo[CONFIG.project.repo[r]] === 'undefined') {
-            return;
-        }
-        if (typeof DATA.activity.repo[CONFIG.project.repo[r]] === 'undefined') {
-            return;
-        }
+    if (!DATA.history.github.ok) {
+      return;
+    }
+    if (!DATA.activity.github.ok) {
+      return;
     }
     $('h1').text('Dashboard for ' + CONFIG.project.title);
     //console.log('Data is complete. We can start drawing.');
     // subscribers history
     drawTimeChart(CONFIG.project.mailinglists,
-        DATA.history.mailinglists, 'subscribers',
+        DATA.history.mailinglists.data, 'subscribers',
         'ml-subscribers-hist-chart', 150, 'LineChart');
     // posts history
     drawTimeChart(CONFIG.project.mailinglists,
-        DATA.history.mailinglists, 'posts',
+        DATA.history.mailinglists.data, 'posts',
         'ml-posts-hist-chart', 150, 'ColumnChart');
     // github watchers history
     drawTimeChart(CONFIG.project.repo,
-        DATA.history.repo, 'watchers',
+        DATA.history.github.data, 'watchers',
         'repo-watchers-hist-chart', 150, 'LineChart');
     // github forks history
     drawTimeChart(CONFIG.project.repo,
-        DATA.history.repo, 'forks',
+        DATA.history.github.data, 'forks',
         'repo-forks-hist-chart', 150, 'LineChart');
     // github issues history
     drawTimeChart(CONFIG.project.repo,
-        DATA.history.repo, 'open_issues',
+        DATA.history.github.data, 'issues',
         'repo-issues-hist-chart', 150, 'LineChart');
     // github size history
     drawTimeChart(CONFIG.project.repo,
-        DATA.history.repo, 'size',
+        DATA.history.github.data, 'size',
         'repo-size-hist-chart', 150, 'LineChart');
 
     // repository top contributors
-    var tableByPerson = getGithubActivityByPersonTable(DATA.activity.repo, 10);
+    var tableByPerson = getGithubActivityByPersonTable(DATA.activity.github, 10);
     drawBarChart(tableByPerson, 'repo-contributors-chart', 150);
-
-    var tableByRepo = getGithubActivityByRepoTable(DATA.activity.repo);
+    var tableByRepo = getGithubActivityByRepoTable(DATA.activity.github);
     drawBarChart(tableByRepo, 'repo-action-chart', 150);
 }
 
@@ -368,10 +359,9 @@ function getTimeTable(config, data, fields) {
     // create dicts keyed by date
     var dateDict = {};
     var dateArray = [];
-    console.log(data);
-    for (var d in data) {
-        for (var n in data[d].data[d].data) {
-            var date = data[d].data[d].data[n].timestamp.split('T')[0];
+    $.each(data, function(k,v) {
+          $.each(v.data, function(i,sample) {
+            var date = sample.timestamp.split('T')[0];
             //console.log(d, n, date);
             if (typeof dateDict[date] === 'undefined') {
                 // add this date to the object and array
@@ -379,14 +369,14 @@ function getTimeTable(config, data, fields) {
                 dateArray.push(date);
                 dateDict[date] = {};
             }
-            dateDict[date][d] = {};
+            dateDict[date][k] = {};
             for (var f in fields) {
                 // fetch the indicated fields
                 //console.log(date, d, fields[f], data[d].data[n][fields[f]]);
-                dateDict[date][d][fields[f]] = data[d].data[d].data[n][fields[f]];
+                dateDict[date][k][fields[f]] = sample[fields[f]];
             }
-        }
-    }
+        });
+    });
     // API gives us latest first. We want latest last.
     dateArray.reverse();
     //console.log('dateArray:', dateArray);
@@ -485,9 +475,9 @@ function drawOverallTimeline2(data) {
     table.addColumn('number', 'Github');
 
     // fill data table with events
-    datekeyed = {};
-    datestamps = []; // for later sorting
-    $.each(data.mailinglists, function(listname, i) {
+    var datekeyed = {};
+    var datestamps = []; // for later sorting
+    $.each(data.mailinglists.data, function(listname, i) {
         //console.log(listname, i);
         $.each(i.data, function(n, item) {
             //console.log(listname, n, item);
@@ -498,14 +488,14 @@ function drawOverallTimeline2(data) {
             datekeyed[item.timestamp].posts += item.posts;
         });
     });
+    //console.log(data.repo.data);
     $.each(data.repo.data, function(n, item) {
         //console.log(n, item.timestamp.split('T')[0], item);
-        var timestamp = item.timestamp.split('T')[0];
-        if (typeof datekeyed[timestamp] === 'undefined'){
-            datestamps.push(timestamp);
-            datekeyed[timestamp] = {'posts': 0, 'github': 0};
+        if (typeof datekeyed[item.timestamp] === 'undefined'){
+            datestamps.push(item.timestamp);
+            datekeyed[item.timestamp] = {'posts': 0, 'github': 0};
         }
-        datekeyed[timestamp].github += 1;
+        datekeyed[item.timestamp].github += 1;
     });
     //console.log(datekeyed);
     datestamps.sort();
@@ -550,7 +540,7 @@ function drawOverallTimeline2(data) {
 
 function drawMailinglistSenderChart(data) {
     //console.log('Mailing list activity stream:', data.data);
-    var tableByPerson = getGithubActivityByPersonTable({'first': data}, 10);
+    var tableByPerson = getGithubActivityByPersonTable(data, 10);
     drawBarChart(tableByPerson, 'ml-senders-chart', 150);
 }
 
@@ -627,15 +617,13 @@ function getGithubActivityByPersonTable(activityResponse, limit) {
     table.addColumn('string', 'Contributor');
     table.addColumn('number', 'Events');
     var dataByPerson = {};
-    $.each(activityResponse, function(repindex, repactivity) {
-        $.each(repactivity.data, function(index, item) {
-            //console.log(index, item.person.login, item._activity_type, item.type, item.repo.full_name);
-            var person = item.person.login;
-            if (typeof dataByPerson[person] === 'undefined') {
-                dataByPerson[person] = 0;
-            }
-            dataByPerson[person] += 1;
-        });
+    $.each(activityResponse.data, function(i, item) {
+          //console.log(index, item.person.login, item._activity_type, item.type, item.repo.full_name);
+          var person = item.person.login;
+          if (typeof dataByPerson[person] === 'undefined') {
+              dataByPerson[person] = 0;
+          }
+          dataByPerson[person] += 1;
     });
     var sortArray = [];
     for (var n in dataByPerson) {
@@ -663,15 +651,13 @@ function getGithubActivityByRepoTable(activityResponse) {
     table.addColumn('string', 'Repository');
     table.addColumn('number', 'Events');
     var dataByRepo = {};
-    $.each(activityResponse, function(repindex, repactivity) {
-        $.each(repactivity.data, function(index, item){
-            //console.log(index, item.person.login, item._activity_type, item.type, item.repo.full_name);
-            var key = item.repo.full_name; // TODO: change to short name when available
-            if (typeof dataByRepo[key] === 'undefined') {
-                dataByRepo[key] = 0;
-            }
-            dataByRepo[key] += 1;
-        });
+    $.each(activityResponse.data, function(repindex, item) {
+        //console.log(index, item.person.login, item._activity_type, item.type, item.repo.full_name);
+        var key = item.repo.full_name; // TODO: change to short name when available
+        if (typeof dataByRepo[key] === 'undefined') {
+            dataByRepo[key] = 0;
+        }
+        dataByRepo[key] += 1;
     });
     var count = 0;
     var sortArray = [];
@@ -710,20 +696,10 @@ function getDataForOverallTimeline(mailinglists, repos, callback) {
         complete_data['repo'] = data;
         complete_data['mailinglists'] = {};
         if (mailinglists.length > 0) {
-            $.each(mailinglists, function(index, list){
-                getMailinglistHistory(list, function(data){
-                    complete_data['mailinglists'][list] = data;
-                    // check if all mailinglists are loaded
-                    //console.log('Checking completeness after loading:', list, data);
-                    for (var l in mailinglists) {
-                        var myl = mailinglists[l];
-                        if (typeof complete_data['mailinglists'][myl] === 'undefined') {
-                            return;
-                        }
-                    }
-                    callback(complete_data);
-                });
-            });
+              getMailinglistHistory(mailinglists, function(data){
+                  complete_data['mailinglists'] = data;
+                  callback(complete_data);
+              });
         } else {
             callback(complete_data);
         }
@@ -733,9 +709,16 @@ function getDataForOverallTimeline(mailinglists, repos, callback) {
 /**
  * @param   String    name    Name of the mailing list to get history for
  */
-function getMailinglistHistory(name, callback) {
+function getMailinglistHistory(names, callback) {
+    var url = 'http://activityapi.herokuapp.com/api/1/history/mailman?per_page=500&grain=day&list=';
+    var comma = false;
+    $.each(names,function(i,name) {
+      if (comma) url+=',';
+      comma = true;
+      url+=name;
+    });
     $.ajax({
-        url: 'http://activityapi.herokuapp.com/api/1/history/mailman?list='+ name + '&per_page=500&grain=day&callback=?',
+        url: url,
         dataType: 'jsonp',
         success: callback
     });
@@ -744,9 +727,9 @@ function getMailinglistHistory(name, callback) {
 /**
  * @param   String    name    Name of the github repo to get history for
  */
-function getGithubRepoHistory(name, callback) {
+function getGithubRepoHistory(names, callback) {
     $.ajax({
-        url: 'http://activityapi.herokuapp.com/api/1/history/github/'+ name + '?per_page=500&grain=day&callback=?',
+        url: 'http://activityapi.herokuapp.com/api/1/history/github?repo='+ names.join(',') + '&per_page=500&grain=day&callback=?',
         dataType: 'jsonp',
         success: callback
     });
@@ -756,14 +739,8 @@ function getGithubRepoHistory(name, callback) {
  * @param   String/Array    names    Name(s) of the github repo(s) to get ativity for
  */
 function getGithubActivity(names, callback) {
-    var name = '';
-    if (typeof names === 'string') {
-        name = names;
-    } else {
-        name = names.join(',');
-    }
     $.ajax({
-        url: 'http://activityapi.herokuapp.com/api/1/activity/github?repo='+ name + '&per_page=1000&callback=?',
+        url: 'http://activityapi.herokuapp.com/api/1/activity/github?repo='+ names.join(',') + '&per_page=1000&callback=?',
         dataType: 'jsonp',
         success: callback
     });
@@ -773,23 +750,10 @@ function getGithubActivity(names, callback) {
  * @param   String/Array    names    Name(s) of the mailing list(s) to get ativity for
  */
 function getMailinglistActivity(names, callback) {
-    var name = '';
-    if (typeof names === 'string') {
-        name = names;
-    } else {
-        name = names.join(',');
-    }
     $.ajax({
-        url: 'http://activityapi.herokuapp.com/api/1/activity/mailman?list='+ name + '&per_page=1000&callback=?',
+        url: 'http://activityapi.herokuapp.com/api/1/activity/mailman?list='+ names.join(',') + '&per_page=1000&callback=?',
         dataType: 'jsonp',
         success: callback
     });
 }
 
-function getGithubRepoInfo(name, callback) {
-    $.ajax({
-        url: 'https://api.github.com/repos/' + name + '?callback=?',
-        dataType: 'jsonp',
-        success: callback
-    });
-}
